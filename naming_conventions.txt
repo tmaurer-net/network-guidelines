@@ -1,0 +1,183 @@
+#####################################################
+### Naming Conventions by Thomas Maurer, 20221109 ###
+#####################################################
+
+Disclaimer:
+This document shows an example, how standardized naming conventions can be implemented. It should give you hints, on how you can implement naming conventions in your own network. However, the best implemention for you may still need some kind of individual adoption to fit your needs.
+This is not a best practice document, rather than a document showing only one out of many options on how this can be done.
+
+Keep in mind, automation always starts with standardization. The more standardization followed by strictly and clearly defined rules, the easier the automation will be and the less exceptions are required.
+
+
+### Hostnames ###
+
+Below, you see an example MTR output snippet, showing a typical trace through the Internet:
+MTR:                                                    Loss%   Snt   Last   Avg  Best  Wrst StDev
+[...]
+ 13.|-- eth-0-0-0-3.pe02.dc17.fra.de.bb.xxx-isp.net      0.0%     2   87.8  87.9  87.8  87.9   0.0
+ 14.|-- lag-101.p01.dc17.fra.de.bb.xxx-isp.net           0.0%     2  165.9 131.4  96.8 165.9  48.8
+ 15.|-- lag-102.p01.dc20.nue.de.bb.xxx-isp.net           0.0%     2   97.2  97.1  97.1  97.2   0.0
+ 16.|-- eth-0-0-0-5.p02.dc20.nue.de.bb.xxx-isp.net       0.0%     2  116.6 107.4  98.2 116.6  13.0
+ 17.|-- eth-0-1-0-1.p02.dc01.vie.at.bb.xxx-isp.net       0.0%     2   98.3  98.4  98.3  98.4   0.0
+ 18.|-- eth-0-0-0-27.pe02.dc02.vie.at.bb.xxx-isp.net     0.0%     2   96.7  97.2  96.7  97.7   0.0
+ 19.|-- eth-0-1.ce01.s-03101091.bb.xxx-isp.net           0.0%     2   96.5  96.5  96.5  96.5   0.0
+[...]
+
+Focus on the lower part of the MTR output.
+
+General hostnames:
+Hostname = <device-name>.<site-id>.<city>.<coutry> (e.g. pe02.dc17.fra.de)
+FQDN = <device-name>.<site-id>.<city>.<coutry>.<isp-backbone-domain> (e.g. pe02.dc17.fra.de.bb.xxx-isp.net)
+FQDN interface = <interface-name>.<device-name>.<site-id>.<city>.<coutry>.<isp-backbone-domain> (e.g. lag-101.pe02.dc17.fra.de.bb.xxx-isp.net)
+
+CE hostnames are an exception here, see the last entry from the above MTR. CE hostnames do not include a site-id, city and country, but the service-id instead:
+CE Hostname = <device-name>.<service-id> (e.g. ce01.s-03101091)
+CE FQDN = <device-name>.<service-id>.<isp-backbone-domain> (e.g. eth-0-1.ce01.s-03101091.bb.xxx-isp.net)
+CE FQDN interface = <interface-name>.<device-name>.<service-id>.<isp-backbone-domain> (e.g. ce01.s-03101091.bb.xxx-isp.net)
+
+The following elements are used here:
+
+<interface-name>
+Corresponding router interface. Vendor specific and interface-speed specific naming should be hidden due to security purposes. The latter also comes with the benefit, that an interface-speed upgrade does not require a DNS change. So for interfaces Hu0/0/0/3, Fo0/0/0/3, Te0/0/0/3 or similar, just use eth-0-0-0-3 for the DNS name.
+Similar rules when using port-channels. So for Po101, BE101 or ae101 use lag-101 for the DNS name.
+
+<device-name>
+Local device name. Should include classic backbone router role name like P, PE and RR. Or further device roles like SW, FW, SRV, SAT or similar. The device role abbreviation should be followed by a consecutive number, which is unique per device role type and site-id. Usually a two-digit should be enough, starting at 01. The number should be a fixed length, so when defining as a 2-digit number, then use "02" instead of "2".
+As an example, the pe02 is the second PE-router at its site.
+Think big in terms of possible future scaling. If you're in doubt, use 3-digits from the beginning. Changing this format later if you run out of possible numbers, breaks your conventions and maybe parts of your automation.
+
+<site-id>
+This is a company-internal site ID. Different variants are possible, but you should use just a single variant for all your sites.
+Example 1: use specific abbreviations for a site name, in a fixed 4-letter string format. No more or less digits are allowed.
+Example 2: introduce surrogate abbrevations for sites. Find a global prefix, like "dc" for datacenter, or "x" which is just the first letter of the ISP name etc. This global prefix is followed by a consecutive number. The consecutive number is a fixed length again. Again: think big! Example: "dc17".
+A general rule of thumb: do not include site-specifc room/cage numbers. You can find the room and of coure the real, full site-name in your documentation then, e.g. NetBox. Site-specific room/cage numbers may break your conventions, and maybe unsupported special characters or very long names are required, which makes it confusing and unreadable.
+
+<city>
+City or region, for example based on IATA code (International Air Transport Association location identifier).
+
+<country>
+Country, for example based on ISO 3166 or TLD.
+
+<service-id>
+See chapter Service ID.
+
+<isp-backbone-domain>
+Your ISP's dedicated backone subdomain, e.g. bb.xxx-isp.net.
+
+Some more notes:
+The interface-specific hostnames should be generated and updated automatically on a daily basis.
+Too much information encoding may decrease readability and may lead to out-of-date or wrong namings, descriptions etc.
+
+
+### Service ID ###
+
+Backbone services:
+L2VPN Point-to-Point: s-01000001 - s-01999999
+L2VPN Multipoint:     s-02000001 - s-02999999
+L3VPN:                s-03000001 - s-03999999
+IP Transit:           s-04000001 - s-04999999
+
+Do not try to encode anything in service ID. Instead just allocate consecutive service IDs to customer IDs in your service database or service documentation. Use the service ID as your L3VPN VRF-name, your L2VPN bridge-domain name, XC name, EVPN EVI and/or EVPN service-ID. But do not derive VLAN IDs from it, as different customers may use the same VLAN ID, or you may need the same VLAN ID on different sites etc.
+
+
+### Interface descriptions ###
+
+Interface descriptions follow fixed, documented rules.
+At first, every interface description gets a 4-letter prefix, showing its general purpose:
+
+CORE = core interface
+MGMT = management interface
+LOOP = loopback interface
+TRAN = IP transit/upstream interface
+PEER = peering/PNI interface
+IXPI = internet exchange point (IXP) interface
+LAGM = LAG/port-channel member interface
+SWCH = LAN-/switch-facing interface
+SATE = satellite-facing interface (router/switch satellite)
+FIRE = firewall-facing interface
+SERV = server-facing interface
+STOR = storage-facing interface
+CUST = customer-facing interface (always used for customer-facing ports, doesn't matter if there's a customer's firewall, switch, server etc. attached to it)
+UNKW = unknown interface type (currently unknown, needs to be investigated)
+RESV = reserved interface
+
+A machine readable delimiter is chosen for separating different types of information within the interface description, e.g. "|". Note that this delimiter '|' is not allowed then within the comments etc.
+The different interface types can vary in number and type of used elements.
+Descriptions are defined like this:
+
+CORE|<remote-hostname>|<remote-interface>|<carrier-name>|<external-service-id>|<date>|<engineer>
+MGMT|<remote-hostname>|<remote-interface>|<date>|<engineer>
+LOOP|<loopback-function>|<date>|<engineer>
+TRAN|<transit-name>|<external-service-id>|<date>|<engineer>
+PEER|<peer-name>|<external-service-id>|<date>|<engineer>
+IXPI|<ixp-name>|<external-service-id>|<date>|<engineer>
+LAGM|<local-lag-id>|<remote-hostname>|<remote-interface>|<date>|<engineer>
+SWCH|<remote-hostname>|<remote-interface>|<date>|<engineer>
+SATE|<remote-hostname>|<remote-interface>|<date>|<engineer>
+FIRE|<remote-hostname>|<remote-interface>|<date>|<engineer>
+SERV|<remote-hostname>|<remote-interface>|<date>|<engineer>
+STOR|<remote-hostname>|<remote-interface>|<date>|<engineer>
+CUST|<service-type>|<customer-id>|<service-id>|<ce-hostname>|<ce-interface>|<date>|<engineer>
+UNKW|<comment>|<date>|<engineer>
+RESV|<comment>|<date>|<engineer>
+
+
+
+The following elements are used here:
+
+<remote-hostname>
+Connected remote device's hostname. Only active peering devices are relevant here, no passive entities like patchpanel, WDM system etc. Passive entities should be documented in tools like NetBox then. (pe02.dc02.vie.at)
+
+<remote-interface>
+Connected remote device's interface name. (te0/0/0/1)
+
+<date>
+Date when the engineer configured or modified the config of this port. It doesn't matter when the service was ordered or delivered, just the port configuration/modification date for traceability. Format needs to be yyyymmdd. (20220716)
+
+<engineer>
+Engineer's username who configured/modified the config of this port, in lower-case. It's not about the person who asked for configuration/modification, but about the person who actually did it. (tmaurer)
+
+<loopback-function>
+Standardized and documented loopback functions, (RID, PIM-RP, etc.)
+
+<carrier-name>, <transit-name>, <peer-name>, <ixp-name>
+Name of the carrier, IP transit provider, the PNI peer or IXP in a standardized format and documented naming. Having two times the same transit, means there need to be the exact same transit name two times, in lower-case. (arelion, ntt, verizon, etc.)
+
+<external-service-id>
+Service or circuit ID from an external service, where you are the customer. (e.g. ic-326133, or "no-service-id" if there's none)
+
+<local-lag-id>
+The local port-channel/bundle-ether ID which the corresponding physical interface is associated to. (po101 for port-channel101, be101 for bundle-ether101)
+
+<service-type>
+General 5-letter standardized customer service type. (L2VPN, L3VPN or IPTRA)
+
+<customer-id>
+Company-defined customer ID. (21203977)
+
+<service-id>
+See chapter Service ID. (s-03101091)
+
+<ce-hostname>
+Hostname of the connected, provider-managed CE device, without service-id. (ce01, or "no-ce" in case there isn't one)
+
+<ce-interface>
+Interface-name of the connected, provider-managed CE device interface. (gi0/1, or "no-ce" in case there is no CE)
+
+<comment>
+Comments are only allowed in case of UNKW or RESV interface types. Be aware that your network devices may limit the length of allowed descriptions.
+
+Example:
+CUST|L3VPN|21203977|s-03101091|ce01|gi0/1|20220716|tmaurer
+
+Some more notes:
+Interface descriptions should be checked automatically on a daily basis, including check against a database with CDP/LLDP entries. In case of discrepancies, the NOC should be informed via email.
+After a template change, all descriptions should re-deployed.
+Too much information encoding may decrease readability and may lead to out-of-date or wrong namings, descriptions etc. Additionally it may limit the number of services, may increase the number of exceptions and necessary update frequency.
+Do not use individual text portions, as they may be used differently by different engineers. Generate the necessary information automatically and with templates.
+Interface description prefixes like "CORE" are not used on LAG member interfaces, but only on the LAG interface itself.
+Do not include include information like transceiver type, as this is an information which can be easily requested from the routers inventory or controller details etc.
+Also do not include patchpanel port names etc. These information should be documented in tools like NetBox. Otherwise the before mentioned drawbacks may occur.
+Define if lower-case etc. is used in each field.
+
+### End ###

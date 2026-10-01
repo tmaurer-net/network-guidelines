@@ -1,0 +1,83 @@
+###########################################################
+### BGP Community Guidelines by Thomas Maurer, 20221109 ###
+###########################################################
+
+Disclaimer:
+This document shows an example, how BGP communities can be implemented in your network. However, the best implemention for you may still need some kind of individual adoption to fit your needs.
+This is not a best practice document, rather than a document showing only one out of many options on how this can be done.
+
+#############################################################################################
+
+*** General Guidelines
+
+ - ASN:2xxxx are customer readable communities
+ - ASN:66x, ASN:3xxxx and ASN:4xxxx are customer writeable communities
+
+#############################################################################################
+
+*** Blackholing
+
+ASN:666    Blackhole
+ASN:661    Blackhole only inside originated country
+ASN:662    Blackhole only outside originated country
+ASN:663    Blackhole only inside originated continent/region
+ASN:664    Blackhole only outside originated continent/region
+65535:666  Blackhole RFC7999
+
+#############################################################################################
+
+*** Traffic Engineering
+
+ASN:30011  Set Local Preference Low
+ASN:30012  Set Local Preference High
+
+ASN:40001  Prepend ISP ASN once when advertising to all ASNs
+ASN:40002  Prepend ISP ASN twice when advertising to all ASNs
+ASN:40003  Prepend ISP ASN thrice when advertising to all ASNs
+
+ASN:4XXX1  Prepend ISP ASN once when advertising to Peer XXX (see Origin Peer communities)
+ASN:4XXX2  Prepend ISP ASN twice when advertising to Peer XXX (see Origin Peer communities)
+ASN:4XXX3  Prepend ISP ASN thrice when advertising to Peer XXX (see Origin Peer communities)
+
+#############################################################################################
+
+*** Origin Types, incl. Reject on specific Origin Types
+
+ASN:20101  Origin Type Downstream
+ASN:20102  Origin Type Private Peering
+ASN:20103  Origin Type IXP
+ASN:20104  Origin Type Upstream
+
+ASN:30101  Reject on Type Downstream
+ASN:30102  Reject on Type Private Peering
+ASN:30103  Reject on Type IXP
+ASN:30104  Reject on Type Upstream
+
+#############################################################################################
+
+*** RPKI Status
+
+ASN:20200  RPKI Unknown
+ASN:20201  RPKI Valid
+ASN:20202  RPKI Invalid
+
+#############################################################################################
+
+*** Origin incl. Reject based on geographic characteristics or specific peers
+
+ASN:21XXX  Origin City XXX
+ASN:22XXX  Origin Country XXX
+ASN:23XXX  Origin Continent/Region XXX
+ASN:24XXX  Origin Peer (Private Peering, IXP, Upstream - but not Downstream) XXX
+
+ASN:31XXX  Reject in City XXX
+ASN:32XXX  Reject in Country XXX
+ASN:33XXX  Reject on Continent/Region XXX
+ASN:34XXX  Reject on Peer (Private Peering, IXP, Upstream - but not Downstream) XXX
+
+#############################################################################################
+
+*** Also look at Tier 1 ISPs with publicly available community lists, like...
+
+https://www.arelion.com/our-network/bgp-routing/bgp-communities.html
+https://www.gin.ntt.net/support-center/policies-procedures/routing/
